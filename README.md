@@ -13,3 +13,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 3. Common Programming Concepts
    - [variables](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/variables)
    - [data_types](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/data_types)
+   - [functions](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/functions)
