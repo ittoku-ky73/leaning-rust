@@ -15,3 +15,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [data_types](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/data_types)
    - [functions](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/functions)
    - [Comments](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/comments)
+   - [Control Flow](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/control_flow)
