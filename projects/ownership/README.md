@@ -79,3 +79,210 @@ println!("{}", s);  // This will print `hello, world!`
 なぜStringは変異できるのに、リテラルはできないのでしょうか？その違いは、この2つの型がメモリをどう扱うかにあります。
 
 ## メモリとアロケーション
+
+文字列リテラルの場合、コンパイル時に内容がわかっているので、最終的な実行ファイルに直接テキストがハードコードされます。そのため文字列リテラルは、高速で効率的です。しかしこれらの特性は、文字列リテラルが不変であることが条件です。コンパイル時にサイズが不明で、プログラム実行中にサイズが変化するテキストを、バイナリにメモリの塊を入れることはできません。
+
+String型では、`mutable, growable`なテキストをサポートするために、コンパイル時に未知のヒープ上のメモリ量を確保し、その内容を保持する必要があります。つまり
+
+- メモリは実行時にメモリアロケータから要求されなければならない
+- Stringを使い終えたら、そのメモリをアロケータに返す必要がある
+
+`String::from`を呼び出すと、その実装に必要なメモリを要求できます。プログラミング言語ではごく一般的なことです。
+
+しかし、2番目の部分は違います。ガベージコレクタ（GC）のある言語では、GCが使われなくなったメモリを追跡、掃除してくれるのでメモリについて考える必要はありません。GCのないほとんどの言語では、メモリが使われなくなった時を特定し、要求した時と同じように、明示的にメモリを解放するコードを呼び出す必要があります。これは歴史的に難しいプログラミングの問題でした。もし解放するのを忘れてしまえばメモリを無駄にし、早く解放してしまうと無効な変数場できてしまいます。2回やったらバグになります。`allocate, free`のペアは1つでなければなりません。
+
+Rustでは、メモリを所有する変数がスコープから外れると、自動的にメモリが返されます。Stringが必要とするメモリをアロケータに返すタイミングは、変数がスコープの外に出た時です。その時にRustは、`drop`という特別な関数を呼び出し、メモリを返してくれます。これはRustが自動的に行なってくれます。
+
+> `C++`では、アイテムのライフタイム終了時にリソースを解放するこのパターンを、Resource Acquisition Is Initialization (RAII)と呼ぶことがあります。
+
+このパターンは、Rustコードの書き方に大きな影響を与えます。複数の変数にヒープ上に割り当てたデータを使わせたい場合など、より複雑な状況ではコードの動作が予想外になることがあります。
+
+## ムーブと相互作用する変数とデータ
+
+Rustでは、複数の変数が同じデータに対して様々な方法で相互作用することができます。
+
+```rust
+let x = 5;
+let y = x;
+```
+
+これは、xに5をバインドし、yにxのコーピーをバインドしています。これで`x, y`は5になります。なぜなら、整数は既知の固定サイズを持つ単純な値であり、この2つの5という値はスタックにプッシュされるからです。次に、下記のコードを見てみましょう。
+
+```rust
+let s1 = String::from("hello");
+let s2 = s1;
+```
+
+これは、2行目でs1の値をコピーしてs2にバインドしていますが、同じというわけではありません。
+
+下記の図をご覧ください。左側は文字列の内容を保持するメモリへのポインタ、長さ、容量で構成されています。このデータ群はスタックに格納されます。右側が内容を保持するヒープ上のメモリです。
+
+![trpl04-01](https://doc.rust-lang.org/book/img/trpl04-01.svg)
+
+長さは、Stringが現在使用しているメモリの量（バイト）です。容量は、アロケータから受け取ったメモリの総量（バイト）です。長さと容量の違いは重要ですが、今回は説明しません。
+
+`s1`を`s2`に代入すると、Stringデータがコピーされます。つまりスタック上にあるポインタ、長さ、容量がコピーされるのです。つまりポインタが参照するヒープ上のデータはコピーされないのです。
+
+![trpl04-02](https://doc.rust-lang.org/book/img/trpl04-02.svg)
+
+下記の図は、Rustが代わりにヒープデータもコピーした場合のメモリの様子を書いています。Rustがこのようにした場合、ヒープ上のデータが大きいと、`s2=s1`という演算は実行性能の面で非常に高くなる可能性があります。
+
+![trpl04-03](https://doc.rust-lang.org/book/img/trpl04-03.svg)
+
+変数がスコープの外に出た時、Rustは自動的に`drop`関数を呼び出し、変数のヒープメモリをクリーンアップします。しかし上の図では、両方のデータポインタが同じ場所を指しています。これは問題です。`s2, s1`がスコープの外に出た時、どちらも同じメモリを解放しようとします。これはダブルフリーエラーと呼ばれ、メモリ安全性バグの1つです。メモリを2回解放すると、メモリ破壊を引き起こし、セキュリティ上の傍若性につながります。
+
+Rustはメモリの安全性を確保するために、`let s2 = s1;`の後、`s1`を無効にします。そのため、`s1`がスコープの外に出ても、Rustは何も開放する必要がありません。`s2`が生成された後に`s1`を使おうとするとどうなるかみてみましょう。
+
+```rust
+let s1 = String::from("hello");
+let s2 = s1;
+
+println!("{}, world!", s1);
+```
+
+このようなエラーが発生するのは、Rustが無効化された参照を使用することを阻止しているからです。
+
+```rust
+cargo run
+   Compiling ownership v0.1.0 (/Users/ittoku/Documents/learning-rust/projects/ownership)
+error[E0382]: borrow of moved value: `s1`
+  --> src/main.rs:13:28
+   |
+11 |     let s1 = String::from("hello");
+   |         -- move occurs because `s1` has type `String`, which does not implement the `Copy` trait
+12 |     let s2 = s1;
+   |              -- value moved here
+13 |     println!("{}, world!", s1);
+   |                            ^^ value borrowed here after move
+   |
+   = note: this error originates in the macro `$crate::format_args_nl` which comes from the expansion of the macro `println` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+For more information about this error, try `rustc --explain E0382`.
+warning: `ownership` (bin "ownership") generated 1 warning
+error: could not compile `ownership` due to previous error; 1 warning emitted
+```
+
+他の言語で、シャローコピーやディープコピーという言葉を聞いたことがある人は、データをコピーせずにポインタ、長さ、容量をコピーするというコンセプトが、シャローコピーであると理解するでしょう。しかしRustは、最初の変数自体無効にするので、シャローコピーと呼ばずに、ムーブと言います。この例では、`s1`が`s2`の中に移動したということになります。
+
+![trpl04-04](https://doc.rust-lang.org/book/img/trpl04-04.svg)
+
+これでメモリの問題は解決です。さらにこれにはある設計上の選択が含まれています。Rustは、データの深いコピーを自動的に作成することはありません。したがって自動的なコピーは、実行時の性能の点から見て、安価であると想定できます。
+
+## クローンと相互作用する変数とデータ
+
+スタックデータだけでなく、ヒープデータも深くコピーしたい場合は、`clone`という一般的なメソッドを使用します。メソッドの構文については第5章で説明しますが、メソッドの多くはプログラミング言語で共通の機能なので、覚えやすいです。
+
+```rust
+let s1 = String::from("hello");
+let s2 = s1.clone();
+
+println!("s1 = {}, s2 = {}", s1, s2);
+```
+
+`clone`の呼び出しを見ると、任意のコードが実行され、このコードは高価である可能性があることがわかります。これは、何か違うことが起こっていることを示す資格的なインジケータです。
+
+## スタックデータのコピー
+
+下記のコードは動作します。しかしどうしてでしょう。`clone`メソッドを使っていないではありませんか。
+
+```rust
+let x = 5;
+let y = x;
+
+println!("x = {}, y = {}", x, y);
+```
+
+理由は、整数のようにコンパイル時にサイズがわかっている型は、全てスタックに格納されるため、実際の値のコピーはすぐにできるのです。つまり、ここれは深いコピーと浅いコピーの違いはないので、`clone`を使っても通常の浅いコピーと変わりません。
+
+Rustには、Copy traitという特殊なアノテーションがあり、整数のようにスタックに格納される型につけることができます。型がCopy特性を実装している場合、それを使った変数は移動せずにコピーされ、別の変数に代入された後も有効な変数になります。
+
+Rustでは、型やその部品にDropという特性が実装されている場合、Copyというアノテーションをつけることができません。もし値がスコープの外に出た時に何か特別な処理をする必要があり、その型にCopyアノテーションを型に追加して特質を実装する方法については、付録Cを参照ください。
+
+では、どのような形がCopy特性を実装しているのか、一般的なルールとして、単純なスカラー値のグループであればCopyを実装でき、アロケーションを必要とするもの、何らかのリソースであるものはCopyを実装することができます。以下はCopyを実装している型です。
+
+- 整数型
+- ブール型
+- 浮動小数点型
+- 文字型
+- タプル型、ただしCopyを実装している型のみが入っている場合に限る。つまり、`(i32, i32)`はOK、`(i32, String)`はダメー。
+
+## 所有権と関数
+
+関数に値を渡す仕組みは、変数に値を代入するときの仕組みと似ています。変数が関数に渡されると、代入と同じように移動、コピーされます。
+
+```rust
+let s = String::from("hello");  // s comes into scope
+takes_ownership(s);             // s's value moves into the function
+                                // ... and so is no longer valid here
+let x = 5;                      // x comes into scope
+makes_copy(x);                  // x would move into the function
+                                // but i32 is Copy, so it's okay to still
+                                // use x afterward
+}  // Here, x goes out of scope, then s. But because s's value was moved, nothing
+   // special happens.
+
+fn takes_ownership(some_string: String) {  // some_string comes into scope
+    println!("{some_string}");
+}  // Here, some_string goes out of scope and `drop` is called. The backing
+   // memory is freed.
+
+fn makes_copy(some_integer: i32) {  // some_integer comes into scope
+    println!("{some_integer}");
+}
+```
+
+`takes_ownership`の呼び出しの後に、`s`を使おうとすると、Rustはコンパイル時にエラーを投げます。このような静的なチェックが、わたし達を守ってくれるのです。
+
+## 返り値とスコープ
+
+返り値に所有権を移すこともできます。
+
+```rust
+let s1 = gives_ownership();         // gives_ownership moves its return
+                                    // value into s1
+let s2 = String::from("hello");     // s2 comes into scope
+let s3 = takes_and_gives_back(s2);  // s2 is moved into
+                                    // takes_and_gives_back, which also
+                                    // moves its return value into s3
+}  // Here, s3 goes out of scope and is dropped. s2 was moved, so nothing
+   // happens. s1 goes out of scope and is dropped.
+
+fn gives_ownership() -> String {             // gives_ownership will move its
+                                             // return value into the function
+                                             // that calls it
+    let some_string = String::from("yours"); // some_string comes into scope
+    some_string                              // some_string is returned and
+                                             // moves out to the calling
+                                             // function
+}
+
+// This function takes a String and returns one
+fn takes_and_gives_back(a_string: String) -> String { // a_string comes into
+                                                      // scope
+    a_string  // a_string is returned and moves out to the calling function
+}
+```
+
+変数の所有権は同じパターンで、別の変数に値を代入することで移動します。ヒープ上のデータを含む変数がスコープの外に出た場合、データの所有権が他の変数に移動していない限り、その値はドロップによってクリーンアップされます。
+
+上記のコードは動作はしますが、関数ごとに所有権を取得し、それを返すのは少し面倒です。関数で値を使用したいが、所有権は取得したくない場合はどうすればよいでしょうか。また、関数本体から得られるデータも同様に返さなければならないかもしれません。
+
+以下の例は、タプルを使って複数の値を返しています。
+
+```rust
+{
+  let s1 = String::from("hello");
+
+  let (s2, len) = calculate_length(s1);
+
+  println!("The length of '{}' is {}.", s2, len);
+}
+
+fn calculate_length(s: String) -> (String, usize) {
+  let length = s.len();
+
+  (s, length);
+}
+```
+
+上記のコードは、儀式的で、一般的であるべき概念に対して多くの労力を必要とします。Rustには参照という、所有権を移さずに値を利用する機能があります。
