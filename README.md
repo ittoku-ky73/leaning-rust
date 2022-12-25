@@ -18,3 +18,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Control Flow](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/control_flow)
 4. Understanding Ownership
    - [Ownership](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/ownership)
+   - [References and Borrowing](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/references_and_borrowing)
