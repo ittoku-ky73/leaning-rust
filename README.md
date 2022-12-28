@@ -20,3 +20,5 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Ownership](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/ownership)
    - [References and Borrowing](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/references_and_borrowing)
    - [The Slice Type](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/slice_type)
+5. Using Structs to Structure Related Data
+   - [Defining and Instantiating Structs](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/struct_introduction)
