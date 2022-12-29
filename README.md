@@ -22,3 +22,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [The Slice Type](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/slice_type)
 5. Using Structs to Structure Related Data
    - [Defining and Instantiating Structs](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/struct_introduction)
+   - [An Example Program Using Structs](https://github.com/ittoku-ky73/leaning-rust/tree/main/projects/struct_rectangle)
