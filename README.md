@@ -26,3 +26,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Method Syntax](https://github.com/ittokun/leaning-rust/tree/main/projects/struct_rectangle_2)
 6. Enums and Pattern Matching
    - [Defining an Enum](https://github.com/ittokun/leaning-rust/tree/main/projects/defining_enum)
+   - [match Control Flow](https://github.com/ittokun/leaning-rust/tree/main/projects/match_control_flow)
