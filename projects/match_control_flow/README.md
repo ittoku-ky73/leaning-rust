@@ -115,3 +115,101 @@ let none = plus_one(None);
 
 `match`と`enum`の組み合わせは多くの場面で役に立ちます。Rustのコードではこのパターンをよく見かけます。`enum`に対して`match`し、変数にその中のデータをバインドし、それに基づいてコードを実行します。
 初めはちょっと難しいですが、一度慣れると、全ての言語でこのパターンを使いたいと思うようになります。常にユーザーのお気に入りです！
+
+## 徹底したマッチング
+
+`plus_one`関数のマッチのNoneの行を削除するとコンパイルできません。
+
+```rust
+match x {
+    Some(i) => Some(i + 1),
+}
+```
+
+また、以下のようなエラーを吐きます。
+
+```none
+cargo run
+   Compiling match_control_flow v0.1.0 (projects/match_control_flow)
+error[E0004]: non-exhaustive patterns: `None` not covered
+   --> src/main.rs:28:11
+    |
+28  |     match x {
+    |           ^ pattern `None` not covered
+    |
+note: `Option<i32>` defined here
+   --> rustlib/src/rust/library/core/src/option.rs:522:5
+    |
+518 | pub enum Option<T> {
+    | ------------------
+...
+522 |     None,
+    |     ^^^^ not covered
+    = note: the matched value is of type `Option<i32>`
+help: ensure that all possible cases are being handled by adding a match arm with a wildcard pattern or an explicit pattern as shown
+    |
+30  ~         Some(i) => Some(i + 1),
+31  ~         None => todo!(),
+    |
+
+For more information about this error, try `rustc --explain E0004`.
+error: could not compile `match_control_flow` due to previous error
+```
+
+Rustは、`match`で全てのケースをカバーしていないことを知り、どのパターンをカバーすれば良いか知っています。Rustの`match`は網羅的です。コードを有効にするためには、全ての可能性を網羅しなければなりません。
+特に、`Option<T>`の場合、Noneのケースを明示的に処理し忘れることをRustが防いでくれるので、NULLがあるかもしれないのに値があると思い込んでしまい、先に述べたような億劫なミスを防いでくれるのです。
+
+## Catch-allパターンと`_`プレースホルダー
+
+列挙型を使うといくつかの特定の値に対しては特別な動作をさせ、それ以外の値はデフォルトで動作させたい時があります。
+例えば、サイコロを振って3を出したら、プレイヤーは移動せず、新しい帽子を手に入れるというゲームを実装するとします。7を出したら、派手な帽子を失います。それ以外は、ゲームボード上をその数だけ移動します。
+サイコロの結果はランダムな値ではなく、ハードコードします。また他のすべてのロジックは、ボディを持たない関数で表現します。
+
+```rust
+let dice_roll = 9;
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    other => move_player(other),
+}
+
+fn add_fancy_hat() {}
+fn remove_fancy_hat() {}
+fn move_player(num_spaces: u8) {}
+```
+
+このコードは、`u8`が持つすべての値をリストアップしていないにも関わらず、コンパイルされます。なぜなら最後のパターンは具体的にリストアップされていないすべての値にマッチするからです。
+このCatch-allパターンは、`match`は網羅的でなければならないという要件を満たしています。パターンが順番に評価されるため、Catch-allパターンは最後に置かなければなりません。
+
+Rustには、Catch-allしたいけどCatch-allパターンに含まれる値を使いたくない場合に使えるパターンもあります。`_`は特殊なパターンで、任意の値にはマッチしますがバインドはされません。これはRustにその値は使わないと伝えるもので、Rustが未使用の変数について警告を発することはありません。
+
+ゲームのルールを変えてみましょう。今度は3か7以外を出したら、もう一度出題しなければならないようにしてみましょう。
+
+```rust
+let dice_roll = 9;
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    _ => reroll(),
+}
+
+fn add_fancy_hat() {}
+fn remove_fancy_hat() {}
+fn reroll() {}
+```
+
+最後にもう一度ゲームのルールを変えて、3か7以外を出したら自分の番には何も起こらないようにします。それを表現するには、`_`に付随するコードとユニット値を使用します。
+
+```rust
+let dice_roll = 9;
+match dice_roll {
+    3 => add_fancy_hat(),
+    7 => remove_fancy_hat(),
+    _ => (),
+}
+
+fn add_fancy_hat() {}
+fn remove_fancy_hat() {}
+```
+
+パターンマッチングについては、第18章でさらに詳しく説明します。次は、`if let`構文を学びます。これはマッチ式だと少し語弊があるような場合に便利です。

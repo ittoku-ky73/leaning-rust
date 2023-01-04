@@ -31,6 +31,17 @@ fn plus_one(x: Option<i32>) -> Option<i32> {
     }
 }
 
+fn dice_roll(dice_roll: u8) {
+    match dice_roll {
+        3 => add_fancy_hat(),
+        7 => remove_fancy_hat(),
+        _ => (),
+    }
+}
+
+fn add_fancy_hat() { println!("Add fancy hat!!!") }
+fn remove_fancy_hat() { println!("Remove fancy hat...") }
+
 fn main() {
     let penny = Coin::Penny;
     let nickel = Coin::Nickel;
@@ -40,6 +51,8 @@ fn main() {
     let five = Some(5);
     let six = plus_one(five);
     let none = plus_one(None);
+
+    dice_roll(3);
 
     println!("Coin Penny is: {}", value_in_cents(penny));
     println!("Coin Nickel is: {}", value_in_cents(nickel));
