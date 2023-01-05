@@ -27,3 +27,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 6. Enums and Pattern Matching
    - [Defining an Enum](https://github.com/ittokun/leaning-rust/tree/main/projects/defining_enum)
    - [match Control Flow](https://github.com/ittokun/leaning-rust/tree/main/projects/match_control_flow)
+   - [Concise Control Flow with if let](https://github.com/ittokun/leaning-rust/tree/main/projects/if_let_control_flow)
