@@ -28,3 +28,5 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Defining an Enum](https://github.com/ittokun/leaning-rust/tree/main/projects/defining_enum)
    - [match Control Flow](https://github.com/ittokun/leaning-rust/tree/main/projects/match_control_flow)
    - [Concise Control Flow with if let](https://github.com/ittokun/leaning-rust/tree/main/projects/if_let_control_flow)
+7. Managing Growing Projects with Packages, Crates, Modules
+   - [packages and Crates](https://github.com/ittokun/leaning-rust/tree/main/projects/packages_crates)
