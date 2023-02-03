@@ -32,3 +32,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 7. Managing Growing projects with Packages, Crates, Modules
    - [packages and Crates](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-01-packages-and-crates.md)
    - [Defining Modules to Control Scope and Privacy](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-02-defining-modules-control-scope-privacy.md)
+   - [Paths for Referring to an Item in the Module Tree](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-03-paths-referring-to-item-module-tree.md)
