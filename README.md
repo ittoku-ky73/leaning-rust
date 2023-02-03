@@ -31,3 +31,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Concise Control Flow with if let](https://github.com/ittokun/leaning-rust/tree/main/docs/ch06-03-concise-control-flow-with-if-let.md)
 7. Managing Growing projects with Packages, Crates, Modules
    - [packages and Crates](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-01-packages-and-crates.md)
+   - [Defining Modules to Control Scope and Privacy](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-02-defining-modules-control-scope-privacy.md)
