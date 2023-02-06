@@ -35,3 +35,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Paths for Referring to an Item in the Module Tree](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-03-paths-referring-to-item-module-tree.md)
    - [Bringing Paths into Scope with the use Keyword](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-04-bringing-paths-into-scope-with-the-use-keyword.md)
    - [Separating Modules into Different Files](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-05-separating-modules-into-different-files.md)
+8. [Common Collections](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-00-common-collections.md)
