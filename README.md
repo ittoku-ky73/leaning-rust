@@ -34,3 +34,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Defining Modules to Control Scope and Privacy](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-02-defining-modules-control-scope-privacy.md)
    - [Paths for Referring to an Item in the Module Tree](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-03-paths-referring-to-item-module-tree.md)
    - [Bringing Paths into Scope with the use Keyword](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-04-bringing-paths-into-scope-with-the-use-keyword.md)
+   - [Separating Modules into Different Files](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-05-separating-modules-into-different-files.md)

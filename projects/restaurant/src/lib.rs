@@ -1,50 +1,7 @@
-mod front_of_house {
-    pub mod hosting {
-        pub fn add_to_waitlist() {}
+mod front_of_house;
+mod back_of_house;
 
-        fn _seat_at_table() {}
-    }
-
-    mod serving {
-        fn _take_order() {}
-
-        fn _serve_order() {}
-
-        fn _take_payment() {}
-    }
-}
-
-mod back_of_house {
-    pub enum Appetizer {
-        Soup,
-        Salad,
-    }
-
-    pub struct Breakfast {
-        pub toast: String,
-        _seasonal_fruit: String,
-    }
-
-    impl Breakfast {
-        pub fn summer(toast: &str) -> Breakfast {
-            Breakfast { 
-                toast: String::from(toast),
-                _seasonal_fruit: String::from("peaches"),
-            }
-        }
-    }
-
-    fn _fix_incorrect_order() {
-        _cook_order();
-        super::_deliver_order();
-    }
-
-    fn _cook_order() {}
-}
-
-fn _deliver_order() {}
-
-use crate::front_of_house::hosting;
+pub use crate::front_of_house::hosting;
 
 pub fn eat_at_restaurant() {
     // Absolute path
