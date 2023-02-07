@@ -36,3 +36,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Bringing Paths into Scope with the use Keyword](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-04-bringing-paths-into-scope-with-the-use-keyword.md)
    - [Separating Modules into Different Files](https://github.com/ittokun/leaning-rust/tree/main/docs/ch07-05-separating-modules-into-different-files.md)
 8. [Common Collections](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-00-common-collections.md)
+   - [Storing Lists of Values with Vectors](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-01-storing-lists-of-values-with-vectors.md)
