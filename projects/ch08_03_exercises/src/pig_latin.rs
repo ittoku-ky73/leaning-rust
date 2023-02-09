@@ -2,8 +2,6 @@
 // 各単語の最初の子音を語尾に移動し、"ay"を追加。"first"は"irst-fay"となる。母音で始まる単語は、代わりに"hay"が末尾に追加される("apple"は"apple-hay")。
 // UTF-8エンコーディングの詳細について覚えておくこと
 
-use std::fmt::format;
-
 pub fn piglatinize(s: &str) -> String {
     let mut s = String::from(s);
     let initial_letter = s.chars().next().unwrap();

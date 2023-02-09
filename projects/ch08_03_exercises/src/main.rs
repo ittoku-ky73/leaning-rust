@@ -1,20 +1,17 @@
-// ハッシュマップとベクターを使って、ユーザーが従業員名を会社の部署に追加できるようなテキストインターフェイスを作成。
-// 例えば、"サリーを技術部に"や"アミールを営業部に"といった感じです。そしてユーザーに部門に属するすべての人、または部門別に会社に属するすべての人をアルファベット順に並べたリストを取得する
-
 mod get_midian_and_most_frequent;
 mod pig_latin;
+mod text_interface;
 
-pub use crate::get_midian_and_most_frequent::{
-    get_midian,
-    get_most_frequent
-};
+pub use crate::get_midian_and_most_frequent::{get_midian, get_most_frequent};
 pub use crate::pig_latin::piglatinize;
-
+pub use crate::text_interface::text_interface;
 
 fn main() {
     midian_and_most_frequent();
 
     pig_latin();
+
+    text_interface();
 }
 
 fn midian_and_most_frequent() {
