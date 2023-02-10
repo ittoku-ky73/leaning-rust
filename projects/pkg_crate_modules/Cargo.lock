@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "restaurant"
+name = "pkg_crate_modules"
 version = "0.1.0"
