@@ -40,3 +40,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Storing UTF-8 Encoded Text with Strings](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-02-storing-utf8-encoded-text-with-strings.md)
    - [Storing Keys with Associated Values in Hash Maps](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-03-hash-maps.md)
 9. [Error Handling](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-00-error-handling.md)
+   - [Unrecoverable Errors with panic!](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-01-panic.md)
