@@ -39,3 +39,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Storing Lists of Values with Vectors](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-01-storing-lists-of-values-with-vectors.md)
    - [Storing UTF-8 Encoded Text with Strings](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-02-storing-utf8-encoded-text-with-strings.md)
    - [Storing Keys with Associated Values in Hash Maps](https://github.com/ittokun/leaning-rust/tree/main/docs/ch08-03-hash-maps.md)
+9. [Error Handling](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-00-error-handling.md)
