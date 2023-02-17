@@ -42,3 +42,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 9. [Error Handling](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-00-error-handling.md)
    - [Unrecoverable Errors with panic!](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-01-panic.md)
    - [Recorverable Errors with Result](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-02-result.md)
+   - [To panic! or Not to panic!](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-03-panic-or-not-panic.md)
