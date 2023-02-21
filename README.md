@@ -45,3 +45,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [To panic! or Not to panic!](https://github.com/ittokun/leaning-rust/tree/main/docs/ch09-03-panic-or-not-panic.md)
 10. [ジェネリック型、トレイト、ライフタイム](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-00-generics.md)
    - [ジェネリックなデータ型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-01-syntax.md)
+   - [トレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-02-trait.md)
