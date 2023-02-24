@@ -46,3 +46,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 10. [ジェネリック型、トレイト、ライフタイム](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-00-generics.md)
    - [ジェネリックなデータ型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-01-syntax.md)
    - [トレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-02-trait.md)
+   - [ライフタイム](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-03-lifetime.md)
