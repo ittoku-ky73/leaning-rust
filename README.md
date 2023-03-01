@@ -49,4 +49,5 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [ライフタイム](https://github.com/ittokun/leaning-rust/tree/main/docs/ch10-03-lifetime.md)
 11. [テストを書く](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-00-testing.md)
    - [テストの書き方](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-01-writing-test.md)
-   - [テストの書き方](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-02-running-tests.md)
+   - [テストの実行](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-02-running-tests.md)
+   - [テストの体系化](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-03-test-organization.md)
