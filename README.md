@@ -52,3 +52,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [テストの実行](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-02-running-tests.md)
    - [テストの体系化](https://github.com/ittokun/leaning-rust/tree/main/docs/ch11-03-test-organization.md)
 12. [コマンドラインプログラム](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-00-commandline.md)
+   - [コマンドライン引数](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-01-arguments.md)
