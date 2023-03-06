@@ -266,18 +266,166 @@ Problem parsing arguments: not enough arguments
 
 ## `main`からロジックを抽出
 
+設定解析のリファクタが済んだので、次はプログラムのロジックに目を向けましょう。
+バイナリプロジェクトの責任の分離で述べたように、`main`関数に存在する設定のセットアップ、エラー処理に関わらない全てのロジックを保持する`run`という関数を抽出します。
+こうすることで、`main`関数は簡潔かつ視察で確かめやすくなり、テストも書くことができます。
 
+```rust
+fn main() {
+    // --snip--
+
+    println!("Searching for {}", config.query);
+    println!("In file {}", config.filename);
+
+    run(config);
+}
+
+fn run(config: Config) {
+    let mut f = File::open(config.filename).expect("file not found");
+
+    let mut contents = String::new();
+    f.read_to_string(&mut contents)
+        .expect("something went wrong reading the file");
+
+    println!("With text: \n{}", contents);
+}
+```
+
+これで`run`関数は、ファイル読み込みから始まる`main`関数の残りのロジックを全て含むようになりました。
 
 ### `run`関数からエラーを返す
 
+残りのプログラムロジックが`run`関数に隔離されたので、`Config::new`のように、エラー処理を改善することができます。
+つまり`run`関数は、`Result<T, E>`を返すようにします。
 
+```rust
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let mut f = File::open(config.filename)?;
+
+    let mut contents = String::new();
+    f.read_to_string(&mut contents)?;
+
+    println!("With text: \n{}", contents);
+
+    Ok(())
+}
+```
+
+ここでは大きく3つの変更を行いました。
+
+1つ目は、`run`関数の戻り値を、`Result<(), Box<dyn Error>>`に変更しました。
+`Box<dyn Error>`は、トレイトオブジェクトです。トレイとオブジェクトは第17章で説明します。
+とりあえず、これは関数が`Error`トレイトを実装する型を返すことを意味し、戻り値の型を具体的に指定しなくてもよくなります。
+こうすることで、エラーケースによって異なる型のエラー値を返す柔軟性を得ます。 `dyn`は"dynamic"の略です。
+
+2つ目は、`expect`の代わりに`?`演算子に変更しました。
+エラーをパニックするのではなく、`?`演算子で呼び出し元が処理できるように、現在の関数からエラー値を返すようにしました。
+
+3つ目は、`run`関数の成功時の返り値に`Ok`値を返すようにしました。
+`run`関数の成功型は、`()`なのでユニット型の値を`Ok`値に包む必要があります。
+これは`run`関数を副作用のためだけに呼び出していると示唆する慣習的な方法です。
+
+変更後にコンパイルを試みるとエラーが起きます。
+`run`関数の戻り値を`Result`を返すように変更したため、`main`関数内でもそれに対応する処理を書かなければなりません。
 
 ### `main`で`run`のエラーを処理
 
+`Config::new`で行った処理に似たテクニックとは少し違った方法でコードを修正します。
 
+```rust
+fn main() {
+    // --snip--
+
+    if let Err(e) = run(config) {
+        println!("Application error: {}", e);
+        process::exit(1);
+    }
+}
+```
+
+ここでは、`unwrap_or_else`ではなく`if let`でエラーを確認し、エラーならプログラムを終了します。
+`run`関数では`Config::new`とは違い、成功時に返す値に関心がないので、`unwrap_or_else`に包まれた値を返してもらう必要はないのです。
 
 ## ライブラリクレートに分割
 
+だいぶ良くなってきました！
+次はテストを加え、`src/main/rs`ファイルの責任が減らせるように、以下のコードを`src/lib.rs`ファイルに置きます。
 
+- `run`関数
+- `use`文
+- `Config`構造体
+- `Config::new`メソッド
 
+```rust
+use std::error::Error;
+use std::fs::File;
+use std::io::prelude::*;
 
+pub struct Config {
+    pub query: String,
+    pub filename: String,
+}
+
+impl Config {
+    pub fn new(args: &[String]) -> Result<Config, &'static str> {
+        if args.len() < 3 {
+            return Err("not enough arguments");
+        }
+
+        let query = args[1].clone();
+        let filename = args[2].clone();
+
+        Ok(Config { query, filename })
+    }
+}
+
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let mut f = File::open(config.filename)?;
+
+    let mut contents = String::new();
+    f.read_to_string(&mut contents)?;
+
+    println!("With text: \n{}", contents);
+
+    Ok(())
+}
+```
+
+`main`関数内で使用するであろう機能に`pub`を使用します。
+これでテスト可能な公開APIのあるライブラリクレートができました。
+
+次は、`src/lib.rs`に移動したコードを`src/main.rs`のバイナリクレートのスコープに持っていく必要があります。
+
+```rust
+extern crate minigrep;
+
+use std::env;
+use std::process;
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    let config = minigrep::Config::new(&args).unwrap_or_else(|err| {
+        println!("Problem parsing arguments: {}", err);
+        process::exit(1);
+    });
+
+    println!("Searching for {}", config.query);
+    println!("In file {}", config.filename);
+
+    if let Err(e) = minigrep::run(config) {
+        println!("Application error: {}", e);
+        process::exit(1);
+    }
+}
+```
+
+ライブラリクレートをバイナリクレートに持っていくのに、`extern crate minigrep`を使用します。
+そして`use minigrep::Config`を追加して、`Config`型をスコープに持ってきて、`run`関数にクレーと名を接頭辞としてつけます。
+これで全機能が連結され動くはずです。`cargo run`で動作確認してみましょう。
+
+ここまで行ってきた作業は大変でしたが、これでエラー処理ははるかに楽になり、コードのモジュール化もできました。
+ここから先の作業はほぼ`src/lib.rs`で完結するでしょう。
+
+古いコードでは大変だけれども、新しいコードでは楽なことをして新発見のモジュール性を活用しましょう。
+次節ではテストを書きます！
