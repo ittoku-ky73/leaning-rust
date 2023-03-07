@@ -55,3 +55,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [コマンドライン引数](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-01-arguments.md)
    - [ファイル読み込み](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-02-reading-a-file.md)
    - [リファクタリング](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-03-refactoring.md)
+   - [テスト駆動開発](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-04-testing.md)
