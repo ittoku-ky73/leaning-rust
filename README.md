@@ -57,3 +57,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [リファクタリング](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-03-refactoring.md)
    - [テスト駆動開発](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-04-testing.md)
    - [環境変数](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-05-environment-variable.md)
+   - [エラーメッセージ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-06-error-message.md)
