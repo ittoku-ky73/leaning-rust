@@ -59,3 +59,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [環境変数](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-05-environment-variable.md)
    - [エラーメッセージ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-06-error-message.md)
 13. [イテレータとクロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-00-functional-features.md)
+   - [クロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-01-closures.md)
