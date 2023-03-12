@@ -60,3 +60,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [エラーメッセージ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch12-06-error-message.md)
 13. [イテレータとクロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-00-functional-features.md)
    - [クロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-01-closures.md)
+   - [イテレータ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-02-iterators.md)
