@@ -86,7 +86,7 @@ fn iterator_demonstration() {
 というのもループが`v1_iter`の所有権を奪い、陰で可変にしていたからです。
 
 また`next`の呼び出しで得られる値は、ベクターの値への不変な参照でもあります。
-`iter`メソッドは、不変参照屁のイテレータを生成します。
+`iter`メソッドは、不変参照へのイテレータを生成します。
 `v1`の所有権を奪い、所有された値を返すイテレータを生成したいなら、`iter`ではなく`into_iter`を呼び出します。
 同様に可変参照を繰り返したいなら、`iter`ではなく`iter_mut`を呼び出します。
 
@@ -117,18 +117,177 @@ fn iterator_sum() {
 
 ## 他のイテレータを生成するメソッド
 
+`Iterator`トレイトに定義された他のメソッドは、イテレータアダプタ(Iterator Adaptors)として知られていますが、イテレータを別の種類のイテレータに変えさせてくれます。
+イテレータアダプタの複数回の呼び出しを連結して、複雑な動作を読みやすい形で行うことができます。
+ですが全てのイテレータは怠惰なので、消費アダプタメソッドのどれかを呼び出し、イテレータアダプタの呼び出しから結果を得なければなりません。
 
+以下の例は、イテレータアダプタメソッドの`map`を呼び出し、各要素に対して呼び出すクロージャを取り、新しいイテレータを生成します。
+
+```rust
+let v1: Vec<i32> = vec![1, 2, 3];
+
+v1.iter().map(|x| x + 1);
+```
+
+上記のコードは何もしません。 指定したクロージャは、決して呼ばれないのです。
+イテレータアダプタは怠惰で、ここでイテレータを消費する必要があります。
+
+イテレータを消費するには、`collect`メソッドを使用します。
+このメソッドはイテレータを消費し、結果の値をコレクションデータ型に集結します。
+
+```rust
+let v1: Vec<i32> = vec![1, 2, 3];
+
+let v2: Vec<_> = v1.iter().map(|x| x + 1).collect();
+
+assert_eq!(v2, vec![2, 3, 4]);
+```
+
+`map`はクロージャを取るので、各要素に対してどんな処理でも指定することができます。
+これは`Iterator`トレイトが提供する繰り返し動作を再利用しつつ、クロージャにより一部の動作をカスタマイズできることを意味します。
 
 ## クロージャを使用する
 
+イテレータが出てきたので、`filter`イテレータアダプタを使って環境をキャプチャするクロージャの一般的な使用を見ることができます。
+`filter`メソッドが、イテレータの各要素を取り、論理値を返すクロージャを取ります。
+このクロージャが`true`を返すと`filter`が生成するイテレータに値が含まれ、`false`を返すと値は含まれません。
 
+```rust
+#[derive(PartialEq, Debug)]
+struct Shoe {
+    size: u32,
+    style: String,
+}
+
+fn shoes_in_my_size(shoes: Vec<Shoe>, shoe_size: u32) -> Vec<Shoe> {
+    shoes.into_iter()
+        .filter(|s| s.size == shoe_size)
+        .collect()
+}
+
+#[test]
+fn filters_by_size() {
+    let shoes = vec![
+        Shoe { size: 10, style: String::from("sneaker") },
+        Shoe { size: 13, style: String::from("sandal") },
+        Shoe { size: 10, style: String::from("boot") },
+    ];
+
+    let in_my_size = shoes_in_my_size(shoes, 10);
+
+    assert_eq!(
+        in_my_size,
+        vec![
+            Shoe { size: 10, style: String::from("sneaker") },
+            Shoe { size: 10, style: String::from("boot") },
+        ]
+    );
+}
+```
+
+`shoes_in_my_size`関数は、引数として靴のベクターとサイズの所有権を奪います。
+そして指定されたサイズの靴だけを含むベクターを返します。
+
+この関数の中で、`into_iter`を呼び出してベクターの所有権を奪うイテレータを作成しています。
+そして`filter`を呼び出し、イテレータをクロージャが`true`を返した要素を含む新しいイテレータに適合させます。
+
+クロージャは環境から`shoe_size`引数をキャプチャし、指定されたサイズの靴だけを保持しながら、その値を各靴のサイズと比較します。
+最後に`collect`を呼び出して、関数から帰ってきたベクターに適合させたイテレータから帰ってきた値が集まります。
+
+`shoes_in_my_size`を呼び出した時に、指定した値と同じサイズの靴だけが得られることをテストしています。
 
 ## `Iterator`トレイトで独自のイテレータを作成
 
+ベクターに対し、`iter, into_iter, iter_mut`を呼び出すことでイテレータを生成してきました。
+ハッシュマップなどの標準ライブラリの他のコレクション型からもイテレータを作成できます。
+`Iterator`トレイトを自分で実装することで、特別なイテレータを作成することもできます。
+前述の通り、定義を提供する必要のある唯一のメソッドは、`next`メソッドなのです。
+いったん定義してしまえば、`Iterator`トレイトが用意しているデフォルト実装のある他のすべてのメソッドを使うことができるのです！
 
+試しに絶対に1から5をカウントするだけのイテレータを作成してみましょう。
+
+```rust
+struct Counter {
+    count: u32,
+}
+
+impl Counter {
+    fn new() -> Counter {
+        Counter { count: 0 }
+    }
+}
+```
+
+`Counter`構造体には`count`というフィールドがあります。
+このフィールドは、1から5までの繰り返しのどこにいるかを追いかける`u32`値を保持しています。
+`Counter`の実装にその値を管理してほしいので、`count`フィールドは非公開です。
+`count`フィールドは常に0の値から新規インスタンスを生成する動作を`new`関数で強要します。
+
+次に`next`メソッドの本体をこのイテレータが使用された際に期待する動作を指定します。
+
+```rust
+impl Iterator for Counter {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.count += 1;
+
+        if self.count < 6 {
+            Some(self.count)
+        } else {
+            None
+        }
+    }
+}
+```
+
+イテレータの`Item`関連型を`u32`に設定しました。 つまりイテレータは、`u32`の値を返します。
+関連型については第19章で説明します。
+
+イテレータの現在の状態に1を足してほしいので、まず1を返すように`count`を0に初期化します。
+`count`が5以下なら`Some`に包まれた現在の値を返し、6以上なら`None`を返します。
 
 ### `Counter`イテレータの`next`メソッド
 
+一旦`Iterator`トレイトを実装し終えたら、イテレータの出来上がりです！
+以下のコードは、`next`を呼び出して`Counter`構造体のイテレータ機能がうまく動作しているかテストしています。
 
+```rust
+#[test]
+fn calling_next_directly() {
+    let mut counter = Counter::new();
+
+    assert_eq!(counter.next(), Some(1));
+    assert_eq!(counter.next(), Some(2));
+    assert_eq!(counter.next(), Some(3));
+    assert_eq!(counter.next(), Some(4));
+    assert_eq!(counter.next(), Some(5));
+    assert_eq!(counter.next(), None);
+}
+```
 
 ### 他の`Iterator`トレイトメソッドを使用する
+
+`next`メソッドを定義して`Iterator`トレイトを実装したので、今では標準ライブラリで定義されているように、どんな`Iterator`トレイトメソッドのデフォルト実装も使えるようになりました。
+全て`next`メソッドの機能を使用しているからです。
+
+以下のコードは、まず`Counter`インスタンスが生成する値を取ります。
+そして最初の値を飛ばして、別の`Counter`インスタンスが生成する値と1組にします。
+最後に各ペアを掛け算し、3で割り切れる結果だけを残し、全結果の値を足し合わせています。
+
+```rust
+#[test]
+fn using_other_iterator_trait_methods() {
+    let sum: u32 = Counter::new().zip(Counter::new().skip(1))
+        .map(|(a, b)| a * b)
+        .filter(|x| x % 3 == 0)
+        .sum();
+
+    assert_eq!(18, sum);
+}
+```
+
+`zip`は4組しか生成しません。
+理論的な5番目のペアの`(5, None)`は、入力イテレータのどちらかが`None`を返すと`zip`は`None`を返却するため決して生成されることがありません。
+
+`next`メソッドの動作方法を指定し、標準ライブラリが`next`を呼び出す他のメソッドにデフォルト実装を提供しているので、これらのメソッド呼び出しは全て可能です。
