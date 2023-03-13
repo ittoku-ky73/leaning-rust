@@ -61,3 +61,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 13. [イテレータとクロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-00-functional-features.md)
    - [クロージャ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-01-closures.md)
    - [イテレータ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-02-iterators.md)
+   - [入出力プログラムの改善](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-03-improving-io-project.md)
