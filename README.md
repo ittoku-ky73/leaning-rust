@@ -63,3 +63,5 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [イテレータ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-02-iterators.md)
    - [入出力プログラムの改善](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-03-improving-io-project.md)
    - [パフォーマンス比較](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-04-performance.md)
+14. Cargoとcrates.io
+   - [リリースプロファイル](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-01-release-profiles.md)
