@@ -65,3 +65,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [パフォーマンス比較](https://github.com/ittokun/leaning-rust/tree/main/docs/ch13-04-performance.md)
 14. Cargoとcrates.io
    - [リリースプロファイル](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-01-release-profiles.md)
+   - [crates.io](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-02-crates-io.md)
