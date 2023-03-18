@@ -186,22 +186,134 @@ pub mod utils {
 
 ## Crates.ioアカウント
 
+クレートを公開する前に、[crates.io](https://crates.io)のアカウントを作成し、APIトークンを取得する必要があります。
+Githubアカウントでログインすると良いです。
+ログインしたら、[https://crates.io/me](https://crates.io/me)で、APIキーを取得します。
+そして`cargo login`コマンドをAPIキーとともに実行します。
 
+```bash
+cargo login abcdefghijklmnopqrstuvwxyz012345
+```
+
+このコマンドは、CargoにAPIトークンを知らせ、`~/.cargo/credentials`に保存します。
+このトークンは秘密です。他人とは共有しないでください。
 
 ## クレートにメタデータを追加
 
+アカウントを作成して公開したいクレートがあるとします。
+公開するには、Cargo.tomlファイルの`[package]`セクションにメタデータを追加する必要があります。
 
+クレートには独自の名前が必要です。
+クレート名は最初に来たものガチの精神で付与されますので、いったんクレーと名が取られてしまったら、その名前のクレートを他の人が公開することは絶対にできません。
+試しにCargo.tomlファイルに以下のセクションを追加して公開できるかみてみましょう。
+
+```toml
+[package]
+name = "guessing_game"
+```
+
+以下のコマンドを実行すると、警告とエラーが出ます。
+
+```bash
+cargo publish
+    Updating crates.io index
+warning: manifest has no description, license, license-file, documentation, homepage or repository.
+--snip--
+Caused by:
+  the remote server responded with an error: missing or empty metadata fields: description, license. Please see https://doc.rust-lang.org/cargo/reference/manifest.html for how to upload metadata
+```
+
+エラーの内容は、説明、ライセンス、ドキュメント、ホームページかリポジトリがないと書かれています。
+クレートを公開するには、目的と条件を他のユーザーに提示する必要があります。
+
+`license`フィールドには、ライセンス識別子を与える必要があります。
+[Software Package Data Exchange(SPDX)](http://spdx.org/licenses)に、使用できる識別子があります。
+例えばこのクレートをMITライセンスにする場合、以下のようにします。
+
+```toml
+[package]
+name = "guessing_game"
+license = "MIT"
+```
+
+SPDXにないライセンスを使用する場合、ライセンスファイルをプロジェクトに置き、`license-file`フェール度にそのファイル名を指定する必要があります。
+
+どのライセンスを使えば良いかは、ここでは説明しません。
+Rustコミュニティの多くの人は、`MIT OR Apache-2.0`のデュアルライセンスを使用します。
+
+独自の名前、バージョン、筆者の詳細、説明、ライセンスを追加することで、やっとクレートを公開することができます。
+
+```toml
+[package]
+name = "guessing_game"
+version = "0.1.0"
+authors = ["Your Name <you@example.com>"]
+description = "A fun game where you guess what number the computer has chosen."
+              (コンピュータが選択した数字を言い当てる面白いゲーム)
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+```
+
+[Cargoドキュメンテーション](https://doc.rust-lang.org/cargo)には、よりたやすくクレートを使用できることを保証する他のメタデータが解説されています。
 
 ## Crates.ioに公開
 
+アカウント作成、APIトークン取得、クレート名の指定、メタデータの指定が終わったら、公開する準備が整います。
+クレートを公開すると、crates.ioに他のユーザーが使用できるようにアップロードされます。
 
+公開は永久ですのでクレートの効果維持には気をつけてください。
+バージョンの上書きはできずコードも削除できません。
+crates.ioの1つの主な目標が、クレートに依存している全てのプロジェクトのビルドが、動き続けるようにコードの永久アーカイブとして機能することです。
+バージョン削除を許してしまうと、動かなくなるプロジェクトが出現する可能性があります。
+
+再度以下のコマンドを実行してみましょう。
+
+```bash
+cargo publish
+    Updating crates.io index
+warning: manifest has no documentation, homepage or repository.
+See https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata for more info.
+   Packaging ittokun_guessing_game v0.1.0 (/Users/ittoku/Documents/learning/rust/projects/guessing_game)
+   Verifying ittokun_guessing_game v0.1.0 (/Users/ittoku/Documents/learning/rust/projects/guessing_game)
+   Compiling ittokun_guessing_game v0.1.0 (/Users/ittoku/Documents/learning/rust/projects/guessing_game/target/package/ittokun_guessing_game-0.1.0)
+    Finished dev [unoptimized + debuginfo] target(s) in 3.08s
+    Packaged 5 files, 3.8KiB (1.8KiB compressed)
+   Uploading ittokun_guessing_game v0.1.0 (/Users/ittoku/Documents/learning/rust/projects/guessing_game)
+    Updating crates.io index
+     Waiting on `ittokun_guessing_game` to propagate to crates.io index (ctrl-c to wait asynchronously)
+```
+
+おめでとうございます！
+これでRustコミュニティとコードを共有し、誰でもこのクレートを依存として簡単に追加することができます。
 
 ## クレートの新バージョンを公開
 
-
+クレートに変更を行い新バージョンをリリースする準備ができたら、Cargo.tomlファイルに指定された`version`の値を変更し、再公開します。
+セマンティックバージョンルールを使用して加えた変更の種類に基づいて適切なバージョン番号を指定します。
+そして`cargo publish`を実行して新バージョンをアップロードします。
 
 ## Crates.ioからバージョンを削除
 
+以前のバージョンのクレートは削除できないですが、将来のプロジェクトがこれに新たに依存することを防ぐことはできます。
+これは何らかの理由により、クレートバージョンが壊れている場合に有用です。
+そのような場面において、Cargoはクレートバージョンの取り下げ(yank)をサポートしています。
 
+バージョンを取り下げると既存のプロジェクトは、引き続きダウンロードしたり依存したりできますが、新規プロジェクトが新しくそのバージョンに依存する事態を防ぐことができます。
+つまり、すでにCargo.lockに存在するプロジェクトは壊さないが、将来のCargo.lockは取り下げられたバージョンを使用しないことを意味します。
 
+バージョンのクレートを取り下げるには以下のコマンドを実行します。
 
+```bash
+cargo yank --vers 1.0.1
+```
+
+`--undo`オプションを付与することで、取り下げを取り消し、再度そのバージョンにプロジェクトを依存させることもできます。
+
+```bash
+cargo yank --vers 1.0.1 --undo
+```
+
+取り下げによるコードの削除は行われません。
+取り下げ機能は誤ってアップロードされた秘密鍵を削除するものではありません。
+もしそうなってしまったら、即座に秘密鍵をリセットしなければなりません。
