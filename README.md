@@ -66,3 +66,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 14. Cargoとcrates.io
    - [リリースプロファイル](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-01-release-profiles.md)
    - [crates.io](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-02-crates-io.md)
+   - [Cargoワークスペース](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-03-carge-workspaces.md)
