@@ -69,3 +69,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Cargoワークスペース](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-03-carge-workspaces.md)
    - [バイナリインストール](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-04-install-binary.md)
    - [Cargoを拡張](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-05-extending-cargo.md)
+15. [スマートポインタ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-00-smart-pointers.md)
