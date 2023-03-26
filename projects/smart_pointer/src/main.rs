@@ -4,7 +4,6 @@ enum List {
     Nil,
 }
 
-
 fn main() {
     // Using Box<T>
     {
@@ -21,5 +20,14 @@ fn main() {
             Box::new(Cons(3,
                 Box::new(Nil))))));
         println!("list = {:?}", list);
+    }
+
+    // using `*`
+    {
+        let x = 5;
+        let y = &x;
+
+        assert_eq!(5, x);
+        assert_eq!(5, *y);
     }
 }

@@ -71,3 +71,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Cargoを拡張](https://github.com/ittokun/leaning-rust/tree/main/docs/ch14-05-extending-cargo.md)
 15. [スマートポインタ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-00-smart-pointers.md)
    - [Box<T>の使用](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-01-box-type.md)
+   - [Derefトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-02-deref-trait.md)
