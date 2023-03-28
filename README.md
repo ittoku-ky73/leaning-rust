@@ -72,3 +72,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
 15. [スマートポインタ](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-00-smart-pointers.md)
    - [Box<T>の使用](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-01-box-type.md)
    - [Derefトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-02-deref-trait.md)
+   - [Dropトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-03-drop-trait.md)
