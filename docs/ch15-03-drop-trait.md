@@ -57,3 +57,79 @@ Dropping CustomSmartPointer with data my stuff !
 通常はメッセージ出力でなく、自分の方が実行する必要のあるクリーンアップコードを指定します。
 
 ## std::mem::drop
+
+自動的な`drop`機能を無効化することは、単純ではありません。普通は`drop`を無効化することはないので。
+`Drop`トレイトの最重要な要点は自動的に考慮されることです。
+しかし時として、値を早期に片付けたくなる可能性があります。
+
+例えばロックを管理するスマートポインタを使用するケースです。
+`drop`トレイトの`drop`メソッドは明示的に呼び出すことはできません。
+これでは同じスコープの他のコードがロックを獲得できるように、ロックを開放するようなコードを書くことができません。
+スコープが終わる前に値を強制的にドロップさせたい場合、標準ライブラリが提供する`std::mem::drop`関数を使用します。
+
+以下の例は`Drop`トレイトの`drop`メソッドを呼び出そうとしています。コンパイルはできません。
+
+```rust
+let c = CustomSmartPointer {
+    data: String::from("some data"),
+};
+println!("CustomSmartPointer created");
+c.drop();
+println!("CustomSmartPointer dropped before the end of main");
+```
+
+エラーは次のようになります。
+
+```
+error[E0040]: explicit use of destructor method
+   --> src/main.rs:101:11
+    |
+101 |         c.drop();
+    |         --^^^^--
+    |         | |
+    |         | explicit destructor calls not allowed
+    |         help: consider using `drop` function: `drop(c)`
+
+For more information about this error, try `rustc --explain E0040`.
+```
+
+明示的に`drop`メソッドを呼び出すことはできないことが書かれています。
+エラーメッセージはデストラクタという専門用語を使っており、これはインスタンスを片づける関数の一般的なプログラミング専門用語です。
+デストラクタはコンストラクタに類似しており、インスタンスを生成します。
+Rustの`drop`関数は、1種の特定のデストラクタです。
+
+コンパイラは`main`の終わりに`drop`を呼び出すので明示的に呼び出すことはできません。
+コンパイラが2回同じ値を片付けようとするので、これは二重開放エラーになります。
+
+値を早期に片付ける必要があるなら、`std::mem::drop`関数を使用します。
+
+`std::mem::drop`関数は、`Drop`トレイトの`drop`メソッドとは異なります。
+早期に強制的にドロップさせたい値を引数に渡すことで呼び出します。
+この関数は初期化処理に含まれているので、`use`を使わずに`drop`関数を呼び出すことができます。
+
+```rust
+let c = CustomSmartPointer {
+    data: String::from("some data"),
+};
+println!("CustomSmartPointer created");
+drop(c);
+println!("CustomSmartPointer dropped before the end of main");
+```
+
+このコードを実行すると以下のように出力されます。
+
+```
+CustomSmartPointer created
+Dropping CustomSmartPointer with data some data !
+CustomSmartPointer dropped before the end of main
+```
+
+`Drop`トレイト実装で指定されたコードを色々な方法で使用し、片付けを便利で安全に行うことができます。
+この機能を理解することで独自のメモリアロケータも作ることができるでしょう。
+`Drop`トレイトとRustの所有権システムがあれば、コンパイラが自動的に行うので片付けを覚えておく必要はなくなります。
+
+まだ使用中の値を間違って片付けてしまうことによる問題もなくなります。
+参照の有効性を確認する所有権システムが、`drop`が1度だけ呼ばれることを保証してくれるためです。
+
+これで`Box<T>`とスマートポインタの特徴の一部をみてきました。
+次は標準ライブラリに定義されている他のスマートポインタを見ていきましょう。
