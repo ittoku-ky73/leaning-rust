@@ -1,4 +1,5 @@
 use std::ops::Deref;
+use std::rc::Rc;
 
 #[derive(Debug)]
 enum List {
@@ -30,6 +31,12 @@ impl Drop for CustomSmartPointer {
     fn drop(&mut self) {
         println!("Dropping CustomSmartPointer with data {} !", self.data);
     }
+}
+
+#[derive(Debug)]
+enum ListV2 {
+    Cons(i32, Rc<ListV2>),
+    Nil,
 }
 
 fn main() {
@@ -101,5 +108,15 @@ fn main() {
         println!("CustomSmartPointer created");
         drop(c);
         println!("CustomSmartPointer dropped before the end of main");
+    }
+
+    // Rc<T> struct
+    {
+        use ListV2::{Cons, Nil};
+
+        let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+        let b = Cons(3, Rc::clone(&a));
+        let c = Cons(4, Rc::clone(&a));
+        println!("b = {:?}, c = {:?}", b, c);
     }
 }
