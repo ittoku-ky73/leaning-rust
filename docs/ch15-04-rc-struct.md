@@ -110,3 +110,45 @@ let c = Cons(4, Rc::clone(&a));
 データのディープコピーは時間がかかることもあります。
 参照カウントに`Rc::clone`を使うことで、視覚的にディープコピーする類のクローンと参照カウントを増やす種類のクローンを区別することができます。
 コード内でパフォーマンスの問題を探す際、ディープコピーのクローンだけを考慮し、`Rc::clone`の呼び出しを無視できるのです。
+
+## Rc\<T>をクローン
+
+`a`の`Rc<List>`への参照を作りドロップする度に参照カウントが変化を出力するようにします。
+
+以下のコードは、リスト`c`を囲む内側のスコープができるように変更しています。
+こうすることで`c`がスコープを抜けるときに参照カウントがどう変化するか確認できます。
+
+```rust
+let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+println!("count after creating a = {}", Rc::strong_count(&a));
+let _b = Cons(3, Rc::clone(&a));
+println!("count after creating b = {}", Rc::strong_count(&a));
+{
+    let _c = Cons(4, Rc::clone(&a));
+    println!("count after creating c = {}", Rc::strong_count(&a));
+}
+println!("count after c goes out of scope = {}", Rc::strong_count(&a));
+```
+
+プログラム内で参照カウントが変更される度に、参照カウントを出力します。
+参照カウントは、`Rc::strong_count`関数を呼び出すことで得られます。
+`Rc<T>`型には`weak_count`関数もあり、これは「循環参照を回避」節で見ていきます。
+
+上記のコードは以下の出力を行います。
+
+```
+count after creating a = 1
+count after creating b = 2
+count after creating c = 3
+count after c goes out of scope = 2
+```
+
+`a`の参照カウントは`clone`を呼び出す度に、増えていっていることがわかります。
+`c`がスコープを抜けると、カウントは1つ下がります。
+
+`Rc<T>`を使用すると単独の値に複数の所有者を持たせることができ、所有者のいずれかが存在している限り、値で有効であり続けることをカウントは保証します。
+
+不変参照経由で、`Rc<T>`は読み取り専用にプログラムの複数箇所間でデータを共有してくれます。
+もし`Rc<T>`が複数の可変参照を存在させることも許可してしまったら、借用ルールを侵害する恐れがあります。
+しかしデータを可変化する能力はとても有用です。
+次節では内部可変性パターンと`Rc<T>`と絡めて普遍性制限を手がけられる`RefCell<T>`型についてみていきます。
