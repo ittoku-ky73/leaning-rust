@@ -73,4 +73,5 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [Box<T>の使用](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-01-box-type.md)
    - [Derefトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-02-deref-trait.md)
    - [Dropトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-03-drop-trait.md)
-   - [RC\<T>構造体](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-04-rc-struct.md)
+   - [RC\<T>型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-04-rc-type.md)
+   - [RefCell\<T>型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-05-refcell-type.md)
