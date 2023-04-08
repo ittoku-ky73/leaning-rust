@@ -88,12 +88,24 @@ impl SomeMessenger {
 impl Messenger for SomeMessenger {
     fn send(&self, msg: &str) {
         self.values.borrow_mut().push(String::from(msg));
+
+        // let mut one_borrow = self.values.borrow_mut();
+        // let mut two_borrow = self.values.borrow_mut();
+
+        // one_borrow.push(String::from(msg));
+        // two_borrow.push(String::from(msg));
     }
 }
 
 #[derive(Debug)]
 enum ListV2 {
     Cons(i32, Rc<ListV2>),
+    Nil,
+}
+
+#[derive(Debug)]
+enum ListV3 {
+    Cons(Rc<RefCell<i32>>, RefCell<Rc<ListV3>>),
     Nil,
 }
 
@@ -183,11 +195,29 @@ fn main() {
         println!("count after c goes out of scope = {}", Rc::strong_count(&a));
     }
 
+    // RefCell<T> type
     {
         let some_messenger = SomeMessenger::new();
         let mut limit_tracker = LimitTracker::new(&some_messenger, 100);
         limit_tracker.set_value(80);
         println!("values = {:?}", some_messenger.values);
+    }
+
+    // Rc<T> and RefCell<T>
+    {
+        use ListV3::{Cons, Nil};
+
+        let value = Rc::new(RefCell::new(5));
+
+        let a = Rc::new(Cons(Rc::clone(&value), RefCell::new(Rc::new(Nil))));
+        let b = Cons(Rc::new(RefCell::new(3)), RefCell::new(Rc::clone(&a)));
+        let c = Cons(Rc::new(RefCell::new(4)), RefCell::new(Rc::clone(&a)));
+
+        *value.borrow_mut() += 10;
+
+        println!("a after = {:?}", a);
+        println!("b after = {:?}", b);
+        println!("c after = {:?}", c);
     }
 }
 

@@ -263,3 +263,97 @@ mod tests {
 `RefCell<T>`の使い方は見たので、動作の仕方を深掘りしていきましょう。
 
 ## RefCell\<T>の借用
+
+不変および可変参照を作成する際、それぞれ`&, &mut`記法を使用します。
+`RefCell<T>`では、`borrow, borrow_mut`メソッドを使用しており、これはRefCellにある安全なAPIの一部です。
+`borrow`メソッドはスマートポインタ型の`Ref<T>`を返し、`borrow_mut`メソッドはスマートポインタ型の`RefMut<T>`を返します。
+どちらの型も`Deref`を実装しているので、普通の参照のように扱うことができます。
+
+`RefCell<T>`は現在活動中の`Ref<T>, RefMut<T>`スマートポインタの数を追いかけます。
+`borrow`を呼び出すたびに、`RefCell<T>`は活動中の不変参照の数を増やします。
+`Ref<T>`の値がスコープを抜けたら、不変参照の数は1下がります。
+コンパイル時の借用規則と全く同じように、`RefCell<T>`はいかなる時も、複数の普遍借用または1つの可変借用を持たせてくれます。
+
+これらの規則を侵害しようとすれば、参照のようにコンパイルエラーになるのではなく、`RefCell<T>`の実装は実行時にパニックになります。
+以下のコードは、`send`実装に変更を加えています。
+
+```rust
+impl Messenger for SomeMessenger {
+    fn send(&self, msg: &str) {
+        let mut one_borrow = self.values.borrow_mut();
+        let mut two_borrow = self.values.borrow_mut();
+
+        one_borrow.push(String::from(msg));
+        two_borrow.push(String::from(msg));
+    }
+}
+```
+
+`borrow_mut`から返ってきた`RefMut<T>`スマートポインタに対して変数`one_borrow`を生成しています。
+`two_borrow`も同じように生成しています。
+これにより同じスコープで2つの可変参照ができ、これは許可されません。
+このコードはコンパイルはできますが、実行時にエラーを吐きます。
+
+```
+thread 'tests::it_sends_an_over_75_percent_warning_message' panicked at 'already borrowed: BorrowMutError', src/main.rs:93:42
+```
+
+コードは、`already borrowed: BorrowMutError`のメッセージと共にパニックになります。
+このようにして`RefCell<T>`は実行時に借用規則の侵害を扱います。
+
+コンパイル時ではなく実行時に借用エラーをキャッチすることは、開発過程の遅い段階でコードのミスを発見することになります。
+これはコードを本番環境にデプロイするまで発見されない可能性があることを意味します。
+またコンパイル時ではなく実行時に借用を追いかける結果として、パフォーマンスを多少犠牲とします。
+
+しかしながら`RefCell<T>`を使うことで、不変値のみが許可される文脈で使用しつつ、自身を変更して見かけたメッセージを追跡するモックオブジェクトを書くことが可能になります。
+代償はありますが、`RefCell<T>`を使用すれば普通の参照よりも多くの機能を得ることができます。
+
+## Rc\<T>とRefCell\<T>の組み合わせ
+
+`RefCell<T>`の一般的な使用法は、`Ref<T>`と組み合わせることにあります。
+`Rc<T>`は何らかのデータに複数の所有者を持たせますが、不変のアクセスしかすることができません。
+`RefCell<T>`と`Rc<T>`を組み合わせることで、複数の所有者と可変化できる値を得ることができます。
+
+例として`Rc<T>`で複数のリストに別のリストの所有権を共有したコンスリストの例があります。
+`Rc<T>`は不変値だけを抱えるので一旦生成したら、リストの値は変更できません。
+これに`RefCell<T>`を組み合わせることで、リストの値を変更することができます。
+
+```rust
+#[derive(Debug)]
+enum List {
+    Cons(Rc<RefCell<i32>>, RefCell<Rc<ListV3>>),
+    Nil,
+}
+
+use ListV3::{Cons, Nil};
+
+let value = Rc::new(RefCell::new(5));
+
+let a = Rc::new(Cons(Rc::clone(&value), RefCell::new(Rc::new(Nil))));
+let b = Cons(Rc::new(RefCell::new(3)), RefCell::new(Rc::clone(&a)));
+let c = Cons(Rc::new(RefCell::new(4)), RefCell::new(Rc::clone(&a)));
+
+*value.borrow_mut() += 10;
+
+println!("a after = {:?}", a);
+println!("b after = {:?}", b);
+println!("c after = {:?}", c);
+```
+
+上記のコードをコンパイルすると以下のような出力になります。
+
+```
+a after = Cons(RefCell { value: 15 }, RefCell { value: Nil })
+b after = Cons(RefCell { value: 3 }, RefCell { value: Cons(RefCell { value: 15 }, RefCell { value: Nil }) })
+c after = Cons(RefCell { value: 4 }, RefCell { value: Cons(RefCell { value: 15 }, RefCell { value: Nil }) })
+```
+
+このテクニックは非常に綺麗です！
+`RefCell<T>`を使用することで表面上は不変な`List`値を持てます。
+しかし内部可変性へのアクセスを提供する`refCell<T>`のメソッドを使用できるので、必要な時にはデータを変更できます。
+借用規則を実行時に精査することでデータ競合を防ぎ、時としてデータ構造でちょっとのスピードを犠牲にこの柔軟性を得るのは価値があります。
+
+標準ライブラリには、`Cell<T>`などの内部可変性を提供する他の型もあります。
+この型は内部値への参照を与える代わりに、値は`Cell<T>`の内部や外部へコピーされる点を除き似ています。
+また`Mutex<T>`もあり、これはスレッド間で使用するのが安全な内部可変性を提供します。
+第16章ではその使い道を学びます。またこれらの型の違いの詳細は、標準ライブラリのドキュメントで知りましょう。
