@@ -1,117 +1,13 @@
+use smart_pointer::*;
+
 use std::cell::RefCell;
-use std::ops::Deref;
 use std::rc::Rc;
-
-#[derive(Debug)]
-enum List {
-    Cons(i32, Box<List>),
-    Nil,
-}
-
-struct MyBox<T>(T);
-
-impl<T> MyBox<T> {
-    fn new(x: T) -> Self {
-        MyBox(x)
-    }
-}
-
-impl<T> Deref for MyBox<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-struct CustomSmartPointer {
-    data: String,
-}
-
-impl Drop for CustomSmartPointer {
-    fn drop(&mut self) {
-        println!("Dropping CustomSmartPointer with data {} !", self.data);
-    }
-}
-
-trait Messenger {
-    fn send(&self, msg: &str);
-}
-
-struct LimitTracker<'a, T: 'a + Messenger> {
-    messenger: &'a T,
-    value: usize,
-    max: usize,
-}
-
-impl<'a, T> LimitTracker<'a, T>
-where
-    T: Messenger,
-{
-    fn new(messenger: &T, max: usize) -> LimitTracker<T> {
-        LimitTracker {
-            messenger,
-            value: 0,
-            max,
-        }
-    }
-
-    fn set_value(&mut self, value: usize) {
-        self.value = value;
-
-        let percentage_of_max = self.value as f64 / self.max as f64;
-
-        if percentage_of_max >= 1.0 {
-            self.messenger.send("Error: You are over your quota!");
-        } else if percentage_of_max >= 0.9 {
-            self.messenger
-                .send("Urgent warning: You've used up over 90% of your quota!");
-        } else if percentage_of_max >= 0.75 {
-            self.messenger
-                .send("Warning: You've used up over 75% of your quota!");
-        }
-    }
-}
-
-struct SomeMessenger {
-    values: RefCell<Vec<String>>,
-}
-
-impl SomeMessenger {
-    fn new() -> SomeMessenger {
-        SomeMessenger {
-            values: RefCell::new(vec![]),
-        }
-    }
-}
-
-impl Messenger for SomeMessenger {
-    fn send(&self, msg: &str) {
-        self.values.borrow_mut().push(String::from(msg));
-
-        // let mut one_borrow = self.values.borrow_mut();
-        // let mut two_borrow = self.values.borrow_mut();
-
-        // one_borrow.push(String::from(msg));
-        // two_borrow.push(String::from(msg));
-    }
-}
-
-#[derive(Debug)]
-enum ListV2 {
-    Cons(i32, Rc<ListV2>),
-    Nil,
-}
-
-#[derive(Debug)]
-enum ListV3 {
-    Cons(Rc<RefCell<i32>>, RefCell<Rc<ListV3>>),
-    Nil,
-}
 
 fn main() {
     // Using Box<T>
     {
+        println!("# Using Box<T>\n");
+
         let b = Box::new(5);
         println!("b = {}", b);
     }
@@ -119,6 +15,8 @@ fn main() {
     // ConsList
     {
         use List::{Cons, Nil};
+
+        println!("\n# ConsList\n");
 
         let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));
         println!("list = {:?}", list);
@@ -151,17 +49,18 @@ fn main() {
         assert_eq!(5, *y);
     }
 
-    // dereference-type coercion
-    fn hello(name: &str) {
-        println!("Hello, {}", name);
-    }
+    // dereference-type corection
     {
+        println!("\n# dereference-type corection\n");
+
         let m = MyBox::new(String::from("Rust"));
         hello(&m);
     }
 
     // Drop trait
     {
+        println!("\n# Drop trait\n");
+
         let _c = CustomSmartPointer {
             data: String::from("my stuff"),
         };
@@ -184,6 +83,8 @@ fn main() {
     {
         use ListV2::{Cons, Nil};
 
+        println!("\n# Rc<T> type\n");
+
         let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
         println!("count after creating a = {}", Rc::strong_count(&a));
         let _b = Cons(3, Rc::clone(&a));
@@ -197,6 +98,8 @@ fn main() {
 
     // RefCell<T> type
     {
+        println!("\n# RefCell<T> type\n");
+
         let some_messenger = SomeMessenger::new();
         let mut limit_tracker = LimitTracker::new(&some_messenger, 100);
         limit_tracker.set_value(80);
@@ -206,6 +109,8 @@ fn main() {
     // Rc<T> and RefCell<T>
     {
         use ListV3::{Cons, Nil};
+
+        println!("\n# Rc<T> and RefCell<T>\n");
 
         let value = Rc::new(RefCell::new(5));
 
@@ -218,6 +123,29 @@ fn main() {
         println!("a after = {:?}", a);
         println!("b after = {:?}", b);
         println!("c after = {:?}", c);
+    }
+
+    // Reference cycles
+    {
+        use ListV4::{Cons, Nil};
+
+        println!("\n# Reference cycles\n");
+
+        let a = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
+        println!("a initial rc count = {}", Rc::strong_count(&a));
+        println!("a next item = {:?}", a.tail());
+        let b = Rc::new(Cons(10, RefCell::new(Rc::clone(&a))));
+        println!("a rc count after b creation = {}", Rc::strong_count(&a));
+        println!("b initial rc count = {}", Rc::strong_count(&b));
+        println!("b next item = {:?}", b.tail());
+        if let Some(link) = a.tail() {
+            *link.borrow_mut() = Rc::clone(&b);
+        }
+        println!("b rc count after changing a = {}", Rc::strong_count(&b));
+        println!("a rc count after changing a = {}", Rc::strong_count(&a));
+        // Uncomment the next line to see that we have a cycle;
+        // it will overflow the stack
+        // println!("a next item = {:?}", a.tail());
     }
 }
 
