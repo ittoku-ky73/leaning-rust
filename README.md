@@ -76,3 +76,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [RC\<T>型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-04-rc-type.md)
    - [RefCell\<T>型](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-05-refcell-type.md)
    - [循環参照](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-06-reference-cycle.md)
+16. [並行性](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-00-concurrency.md)
