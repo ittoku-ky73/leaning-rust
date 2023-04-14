@@ -162,3 +162,92 @@ hi number 4 from the main thread!
 ```
 
 どこに`join`を呼ぶかと言った些細なことが、スレッドが同時に走るかどうかに影響することもあります。
+
+## moveクロージャ
+
+`move`クロージャは`thread::spawn`とともによく使用されます。
+あるスレッドのデータを別のスレッドで使用できるようになるからです。
+
+第13章では、クロージャの引数リストの前に`move`キーワードを使用して、クロージャに環境で使用している値の所有権を強制的に奪うことができると説明しました。
+このテクニックは、あるスレッドから別のスレッドに値の所有権を移すために新しいスレッドを生成する際に有用です。
+
+上記で書いたコードには`thread::spawn`に渡したクロージャに引数はありませんでした。
+立ち上げたスレッドのコードでメインスレッドからのデータは何も使用していないということです。
+立ち上げたスレッドでメインスレッドのデータを使用するには、立ち上げるスレッドのクロージャは必要な値をキャプチャしなければなりません。
+
+以下のコードはメインスレッドでベクターを生成し、立ち上げたスレッド内で使用しています。
+
+```rust
+let v = vec![1, 2, 3];
+
+let handle = thread::spawn(|| {
+    println!("Here's a vector: {:?}", v);
+});
+
+handle.join().unwrap();
+```
+
+クロージャは`v`を使用しているので、`v`をキャプチャしクロージャの環境の一部にしています。
+`thread::spawn`はこのクロージャを新しいスレッドで走らせるので、その新しいスレッド内で`v`にアクセスできるはずです。
+しかしこのコードをコンパイルしようとすると以下のようなエラーになります。
+
+```
+error[E0373]: closure may outlive the current function, but it borrows `v`, which is owned by the current function
+  --> src/main.rs:21:32
+   |
+21 |     let handle = thread::spawn(|| {
+   |                                ^^ may outlive borrowed value `v`
+22 |         println!("Here's a vector: {:?}", v);
+   |                                           - `v` is borrowed here
+   |
+note: function requires argument type to outlive `'static`
+  --> src/main.rs:21:18
+   |
+21 |       let handle = thread::spawn(|| {
+   |  __________________^
+22 | |         println!("Here's a vector: {:?}", v);
+23 | |     });
+   | |______^
+help: to force the closure to take ownership of `v` (and any other referenced variables), use the `move` keyword
+   |
+21 |     let handle = thread::spawn(move || {
+   |                                ++++
+```
+
+Rustは`v`のキャプチャ方法を推論し、`println!`は`v`への参照のみを必要とするので、クロージャは`v`を借用しようとします。
+ですがコンパイラには立ち上げたスレッドがどのくらいの期間走るのかわからないので、`v`への参照が常に有効であるか把握できないのです。
+
+```rust
+let v = vec![1, 2, 3];
+
+let handle = thread::spawn(|| {
+    println!("Here's a vector: {:?}", v);
+});
+
+drop(v);
+
+handle.join().unwrap();
+```
+
+このコードを実行できてしまうなら、立ち上げたスレッドは全く実行されることなく即座にバックグラウンドに置かれる可能性があります。
+立ち上げたスレッドは内部に`v`の参照を持ちますが、メインスレッドでは`drop`関数を使用して即座に`v`をドロップしています。
+そして立ち上げたスレッドが実行を開始する時には、もう`v`は有効ではなく参照も不正になるのです。
+
+解決策はクロージャの前に`move`キーワードをつけることです。
+コンパイラに値を借用すべきと推論させるのではなく、クロージャに使用している値の所有権を強制的に奪わせます。
+
+```rust
+let v = vec![1, 2, 3];
+
+let handle = thread::spawn(move || {
+    println!("Here's a vector: {:?}", v);
+});
+
+handle.join().unwrap();
+```
+
+ではメインスレッドが`drop`を呼び出すコードの場合どうなるでしょうか？
+それは`move`を使用することで`v`をクロージャの環境にムーブさせることになるので、`drop`をそもそも呼び出せなくなります。
+これはRustの所有権規則によるものです。
+
+これでスレッドとスレッドAPIの基礎知識を得たことで、次はスレッドでできることを見ていきましょう。
