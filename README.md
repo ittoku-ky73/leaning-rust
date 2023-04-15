@@ -78,3 +78,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [循環参照](https://github.com/ittokun/leaning-rust/tree/main/docs/ch15-06-reference-cycle.md)
 16. [並行性](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-00-concurrency.md)
    - [スレッド](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-01-threads.md)
+   - [メッセージ受け渡し](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-02-message-passing.md)

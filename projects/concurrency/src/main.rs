@@ -1,3 +1,4 @@
+use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
@@ -25,4 +26,17 @@ fn main() {
     });
 
     handle.join().unwrap();
+
+    // use mpsc
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(move || {
+        let val = String::from("hi");
+        tx.send(val).unwrap();
+        // println!("val is {}", val); // error
+    });
+
+    let received = rx.recv().unwrap();
+    println!("Got: {}", received);
 }
