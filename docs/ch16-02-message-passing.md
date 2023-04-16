@@ -2,7 +2,7 @@
 
 > Ref: https://doc.rust-jp.rs/book-ja/ch16-02-message-passing.html
 
-人気度を増してきている安全な平衡性を保証する1つのアプローチがメッセージ受け渡しです。
+人気度を増してきている安全な並行性を保証する1つのアプローチがメッセージ受け渡しです。
 これはスレッドやアクターがデータを含むメッセージを相互に送り合うことでやり取りします。
 
 [Go言語のドキュメンテーション](http://golang.org/doc/effective_go.html)のスローガンの1つに「メモリを共有することでやりとりするな。代わりにやりとりすることでメモリを共有しろ」というものがあります。
@@ -92,3 +92,93 @@ println!("Got: {}", received);
 ```
 Got: hi
 ```
+
+## 所有権の転送
+
+借用規則は安全な並行コードを書く手助けをしてくれるので、メッセージ送信では重要な役割を担っています。
+並行プログラミングでエラーを回避することは、Rustプログラム全体で所有権について考える利点です。
+試しにチャンネルと所有権がともに動いて、どう問題を回避するかをみてみましょう。
+
+以下のコードはコンパイルできません。なぜ許容されないのか考えてみてください。
+
+```rust
+let (tx, rx) = mpsc::channel();
+
+thread::spawn(move || {
+    let val = String::from("hi");
+    tx.send(val).unwrap();
+    println!("val is {}", val);
+});
+
+let received = rx.recv().unwrap();
+println!("Got: {}", received);
+```
+
+ここでは`tx.send`経由でチャンネルに送信後に`val`を出力しようとしています。これを許可するのは悪い考えです。
+一度値が他のスレッドに送信されたら、再度値を使用とする前にそのスレッドが変更したりドロップできてしまいます。
+可能性としてその別のスレッドの変更により、矛盾していたり存在しないデータのせいでエラーが発生したり、予期しない結果になるでしょう。
+
+上記のコードをコンパイルすると以下のようなエラーを出力します。
+
+```
+error[E0382]: borrow of moved value: `val`
+  --> src/main.rs:49:31
+   |
+47 |         let val = String::from("hi");
+   |             --- move occurs because `val` has type `String`, which does not implement the `Copy` trait
+48 |         tx.send(val).unwrap();
+   |                 --- value moved here
+49 |         println!("val is {}", val);
+   |                               ^^^ value borrowed here after move
+   |
+   = note: this error originates in the macro `$crate::format_args_nl` which comes from the expansion of the macro `println` (in Nightly builds, run with -Z macro-backtrace for more info)
+```
+
+並行性のミスがコンパイルエラーを招きました。
+`send`関数は引数の所有権を奪い、値がムーブされると受信側が所有権を得ます。
+これにより送信後に誤って再度値を使用するのを防いでくれます。所有権システムのおかげです！
+
+## 複数の値を送信
+
+前の前のコードは動作しましたが2つの個別のスレッドがお互いにチャンネル越しに会話していることは明瞭には示されませんでした。
+以下のコードは立ち上げたスレッドで複数のメッセージを送信し各メッセージ間で1秒待機させることで、並行に動作することを証明しています。
+
+```rust
+let (tx, rx) = mpsc::channel();
+
+thread::spawn(move || {
+    let vals = vec![
+        String::from("hi"),
+        String::from("from"),
+        String::from("the"),
+        String::from("thread"),
+    ];
+
+    for val in vals {
+        tx.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+for received in rx {
+    println!("Got: {}", received);
+}
+```
+
+今回はメインスレッドに送信したい文字列のベクターを立ち上げたスレッドが持っています。
+それらを繰り返し各々個別に送信し、`thread::sleep`関数を呼び出すことで、1秒間メッセージを停止します。
+
+メインスレッドにおいて、もはや`recv`関数を明示的に呼んではいません。 代わりに`rx`をイテレータとして扱っています。
+受信した値それぞれを出力し、チャンネルが閉じられると繰り返しも終わります。
+
+上記のコードを実行すると、各行の間に1秒の待機をしつつ以下のような出力を行います。
+
+```
+Got: hi
+Got: from
+Got: the
+Got: thread
+```
+
+メインスレッドの`for`ループには停止したり、遅らせたりするコードは何もありません。
+なのでメインスレッドが立ち上げたスレッドから値を受け取るのを待機していることが分かります。
