@@ -182,3 +182,70 @@ Got: thread
 
 メインスレッドの`for`ループには停止したり、遅らせたりするコードは何もありません。
 なのでメインスレッドが立ち上げたスレッドから値を受け取るのを待機していることが分かります。
+
+## 転送機をクローン
+
+`mpsc`は**multiple producer, single consumer**の略称です。
+`mpsc`を使用して、すべての値を同じ受信機に送信する複数のスレッドを生成してみましょう。
+チャンネルの転送の片割れをクローンすることで実現できます。
+
+```rust
+let (tx, rx) = mpsc::channel();
+
+let tx1 = mpsc::Sender::clone(&tx);
+thread::spawn(move || {
+    let vals = vec![
+        String::from("hi"),
+        String::from("from"),
+        String::from("the"),
+        String::from("thread"),
+    ];
+
+    for val in vals {
+        tx1.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+thread::spawn(move || {
+    let vals = vec![
+        String::from("more"),
+        String::from("messages"),
+        String::from("for"),
+        String::from("you"),
+    ];
+
+    for val in vals {
+        tx.send(val).unwrap();
+        thread::sleep(Duration::from_secs(1));
+    }
+});
+
+for received in rx {
+    println!("Got: {}", received);
+}
+
+```
+
+最初のスレッドを立ち上げる前に、チャンネルの送信側に対して`clone`を呼び出しています。
+これにより最初に立ち上げたスレッドに渡せる新しい送信ハンドルが得られます。
+元のチャンネルの送信側は、2番目に立ち上げたスレッドに渡します。
+これにより2つのスレッドが得られ、それぞれチャンネルの受信側に異なるメッセージを送信します。
+
+このコードを実行すると以下のような出力になります。
+
+```
+Got: hi
+Got: more
+Got: messages
+Got: from
+Got: for
+Got: the
+Got: you
+Got: thread
+```
+
+別の順番で値が出る可能性もあります。これはシステム次第であり並行性は面白いと同時に難しい部分でもあります。
+異なるスレッドで色々な値を与えて`thread::sleep`で実験をしたら、走らせるたびにより非決定的になり、毎回異なる出力になります。
+
+チャンネルの動作方法を学んだので、他の並行性に目を向けていきましょう。
