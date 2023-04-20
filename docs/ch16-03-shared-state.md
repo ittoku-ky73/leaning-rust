@@ -68,3 +68,127 @@ println!("m = {:?}", m);
 結果としてロックの解除が自動的に行われるので、ロック解除忘れや他のスレッドで使用されるのを阻害するリスクを負いません。
 
 では上記のコードを実行して、内部の`i32`の値が6に変更されているか確認してみましょう。
+
+## Mutex\<T>を共有
+
+`Mutex<T>`を使って複数のスレッド間で値を共有してみましょう。
+10個のスレッドを立ち上げ、各々カウンタの値を1ずつインクリメントさせます。
+以下の数例は、コンパイルエラーになることに注意し、そのエラーを使用して`Mutex<T>`の使用法と、コンパイラがそれを正しく活用する手助けをしてくれる方法について学びます。
+
+```rust
+let counter = Mutex::new(0);
+let mut handles = vec![];
+
+for _ in 0..10 {
+    let handle = thread::spawn(move || {
+        let mut num = counter.lock().unwrap();
+
+        *num += 1;
+    });
+    handles.push(handle);
+}
+
+for handle in handles {
+    handle.join().unwrap();
+}
+
+println!("Result: {}", *counter.lock().unwrap());
+```
+
+`conter`変数を生成して`Mutex<T>`の内部に`i32`を保持しています。
+次に数値の範囲をマッピングして10個のスレッドを生成しています。
+`thread::spawn`を使用して全スレッドに同じクロージャを与えています。
+このクロージャはスレッド内にカウンタをムーブし、`lock`メソッドを呼ぶことで`Mutex<T>`のロックを獲得しています。
+それから`Mutex`の値に1を足し、スレッドがクロージャを実行し終えたら、`num`はスコープ外に出てロックを解除し、他のスレッドに`Mutex`の値を使えるようにしています。
+
+メインスレッドですべてのjoinハンドルを収集します。
+そして各に対して`join`を呼び出し、全スレッドが終了するのを確かめています。
+その時点でメインスレッドはロックを獲得し、このプログラムの結果を出力します。
+
+しかしこのコードはコンパイルできません。原因を探りましょう。
+
+```
+error[E0382]: use of moved value: `counter`
+  --> src/main.rs:96:36
+   |
+92 |     let counter = Mutex::new(0);
+   |         ------- move occurs because `counter` has type `Mutex<i32>`, which does not implement the `Copy` trait
+...
+96 |         let handle = thread::spawn(move || {
+   |                                    ^^^^^^^ value moved into closure here, in previous iteration of loop
+97 |             let mut num = counter.lock().unwrap();
+   |                           ------- use occurs due to use in closure
+```
+
+エラーメッセージは、`counter`あたいはクロージャにムーブされ、`lock`を呼び出した時にキャプチャされていると述べています。
+その説明は所望した動作のように聞こえますが許可されていないのです！
+
+プログラムを単純化してこれを理解しましょう。
+`for`ループで10個スレッドを生成する代わりにループなしで2つのスレッドを作るだけにしてどうなるか確認してみましょう。
+
+```rust
+let counter = Mutex::new(0);
+let mut handles = vec![];
+
+let handle = thread::spawn(move || {
+    let mut num = counter.lock().unwrap();
+
+    *num += 1;
+});
+handles.push(handle);
+
+let handle2 = thread::spawn(move || {
+    let mut num = counter.lock().unwrap();
+
+    *num += 1;
+});
+handles.push(handle2);
+
+for handle in handles {
+    handle.join().unwrap();
+}
+
+println!("Result: {}", *counter.lock().unwrap());
+```
+
+2つのスレッドを生成し、2番目のスレッドの変数名を`handle2, num2`に変更しています。
+上記のコードをコンパイル使用とすると以下のようなエラーを吐きます。
+
+```
+error[E0382]: use of moved value: `counter`
+   --> src/main.rs:122:33
+    |
+112 |     let counter = Mutex::new(0);
+    |         ------- move occurs because `counter` has type `Mutex<i32>`, which does not implement the `Copy` trait
+...
+115 |     let handle = thread::spawn(move || {
+    |                                ------- value moved into closure here
+116 |         let mut num = counter.lock().unwrap();
+    |                       ------- variable moved due to use in closure
+...
+122 |     let handle2 = thread::spawn(move || {
+    |                                 ^^^^^^^ value used here after move
+123 |         let mut num = counter.lock().unwrap();
+    |                       ------- use occurs due to use in closure
+
+error[E0382]: borrow of moved value: `counter`
+   --> src/main.rs:133:29
+    |
+112 |     let counter = Mutex::new(0);
+    |         ------- move occurs because `counter` has type `Mutex<i32>`, which does not implement the `Copy` trait
+...
+122 |     let handle2 = thread::spawn(move || {
+    |                                 ------- value moved into closure here
+123 |         let mut num = counter.lock().unwrap();
+    |                       ------- variable moved due to use in closure
+...
+133 |     println!("Result: {}", *counter.lock().unwrap());
+    |                             ^^^^^^^^^^^^^^ value borrowed here after move
+```
+
+なるほど！最初のエラーメッセージは、`handle`に紐づけられたスレッドのクロージャに`counter`がムーブされていることを示唆しています。
+そのムーブにより、それに対して`lock`を呼び出し、結果を2番目のスレッドの`num2`に保持しようとした時に、`counter`をキャプチャすることを妨げています。
+
+故にコンパイラは`counter`の所有権を複数のスレッドに移すことはできないと教えてくれています。
+これは以前では確認しづらかったことです。なぜならスレッドはループの中にあり、ループの違う繰り返しにある違うスレッドをコンパイラは指し示すことができないからです。
+第15章で学んだ複数所有権メソッドでこのエラーを修正しましょう。
