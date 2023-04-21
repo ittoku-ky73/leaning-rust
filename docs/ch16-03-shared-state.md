@@ -192,3 +192,135 @@ error[E0382]: borrow of moved value: `counter`
 故にコンパイラは`counter`の所有権を複数のスレッドに移すことはできないと教えてくれています。
 これは以前では確認しづらかったことです。なぜならスレッドはループの中にあり、ループの違う繰り返しにある違うスレッドをコンパイラは指し示すことができないからです。
 第15章で学んだ複数所有権メソッドでこのエラーを修正しましょう。
+
+# 複数所有権
+
+第15章でスマートポインタの`Rc<T>`を使用して参照カウントの値を作ることで1つの値に複数の所有者を与えました。
+ここでも同じことをしてどうなるのかみてみましょう。
+`Rc<T>`に`Mutex<T>`を包含し、所有権をスレッドに移す前に`Rc<T>`をクローンします。
+
+```rust
+let counter = Rc::new(Mutex::new(0));
+let mut handles = vec![];
+
+for _ in 0..10 {
+    let counter = Rc::clone(&counter);
+    let handle = thread::spawn(move || {
+        let mut num = counter.lock().unwrap();
+
+        *num += 1;
+    });
+    handles.push(handle);
+}
+
+for handle in handles {
+    handle.join().unwrap();
+}
+
+println!("Result: {}", *counter.lock().unwrap());
+```
+
+まだコンパイルはできません。エラーメッセージは次のとおりです。
+
+```
+error[E0277]: `Rc<Mutex<i32>>` cannot be sent between threads safely
+   --> src/main.rs:98:36
+    |
+98  |           let handle = thread::spawn(move || {
+    |                        ------------- ^------
+    |                        |             |
+    |  ______________________|_____________within this `[closure@src/main.rs:98:36: 98:43]`
+    | |                      |
+    | |                      required by a bound introduced by this call
+99  | |             let mut num = counter.lock().unwrap();
+100 | |
+101 | |             *num += 1;
+102 | |         });
+    | |_________^ `Rc<Mutex<i32>>` cannot be sent between threads safely
+    |
+    = help: within `[closure@src/main.rs:98:36: 98:43]`, the trait `Send` is not implemented for `Rc<Mutex<i32>>`
+note: required because it's used within this closure
+   --> src/main.rs:98:36
+    |
+98  |         let handle = thread::spawn(move || {
+    |                                    ^^^^^^^
+note: required by a bound in `spawn`
+   --> /Users/ittoku/.rustup/toolchains/stable-aarch64-apple-darwin/lib/rustlib/src/rust/library/std/src/thread/mod.rs:704:8
+    |
+704 |     F: Send + 'static,
+    |        ^^^^ required by this bound in `spawn`
+```
+
+とても長いエラーメッセージですが、注目すべきところは`error[E0277]: Rc<Mutex<i32>> cannot be sent between threads safely`です。
+そしてその理由について述べているところは`the trait Send is not implemented for Rc<Mutex<i32>>`です。
+`Send`については次節で説明しますが、スレッドと共に使用している型が並行な場面で使用されることを意図したものであることを保証するトレイトに1つです。
+
+残念ながら`Rc<T>`はスレッド間で共有するには安全ではないのです。
+`Rc<T>`が参照カウントを管理する際、`clone`が呼び出されるたびにカウントを追加し、クローンがドロップされるたびにカウントを差し引きます。
+
+つまり並行基本型を使用してカウントの変更が別のスレッドに妨害されないことを確認しません。
+これは間違ったカウントにつながる可能性があり、メモリリークやドロップされることにつながる可能性のある潜在的なバグです。
+必要なのはいかにも`Rc<T>`のようだけれども参照カウントへの変更をスレッドセーフに行うものです。
+
+
+## Arc\<T>で参照カウント
+
+幸いなことに`Arc<T>`は`Rc<T>`のような並行な状況で安全に使用できる型です。
+`a`は`atomic`を表し、原始的に参照カウントする型を意味します。
+アトミックはここでは詳しく説明しない並行性の別の基本型です。詳細は`std::sync::atomic`の標準ライブラリのドキュメントをご覧ください。
+今のところアトミックは、基本型のように動くけれどもスレッド間で共有しても安全なことだけ知っていれば良いです。
+
+ではなぜすべての基本型がアトミックでなく、標準ライブラリの型も標準で`Arc<T>`を使って実装されていないのでしょうか。
+その理由はスレッド安全性が本当に必要な時だけ支払いたいパフォーマンスの犠牲と共に得られるものだからです。
+シングルスレッドで値に処理を施すだけなら、アトミックが提供する補償を強制する必要がない方がコードはより早く走るのです。
+
+例に戻りましょう。`Arc<T>, Rc<T>`は同じAPIなので、`use, new, clone`を変更してプログラムを修正してみましょう。
+
+```rust
+let counter = Arc::new(Mutex::new(0));
+let mut handles = vec![];
+
+for _ in 0..10 {
+    let counter = Arc::clone(&counter);
+    let handle = thread::spawn(move || {
+        let mut num = counter.lock().unwrap();
+
+        *num += 1;
+    });
+    handles.push(handle);
+}
+
+for handle in handles {
+    handle.join().unwrap();
+}
+
+println!("Result: {}", *counter.lock().unwrap());
+```
+
+上記のコードを実行すると以下のような出力になります。
+
+```
+Result: 10
+```
+
+0から10まで数えることができました！
+これはあまり印象的ではないように思えるかもしれませんが、本当に`Mutex<T>`とスレッド安全性についていろいろなことを教えてくれました。
+このプログラムの構造を利用して、カウンタをインクリメントする以上の複雑な処理を行うこともできます。
+例えば、計算を独立した部分に小分けしてその部分をスレッドに分割し、それから`Mutex<T>`を使用して各スレッドに最終結果を更新させることもできます。
+
+## RefCell\<T>, Rc\<T>, Mutex\<T>, Arc\<T>
+
+`counter`は不変なのに、その内部にある値への可変参照を得ることができたことに気づいたでしょうか。
+つまり`Mutex<T>`は`Cell`系のように内部可変性を提供します。
+第15章で`RefCell<T>`を使用して`Rc<T>`の内容を可変化できるようにしたのと同様に、`Mutex<T>`を使用して`Arc<T>`の内容を可変化しているのです。
+
+気づいておくべき別の詳細は、`Mutex<T>`を使用する際にあらゆる種類のロジックエラーからはコンパイラは保護してくれないということです。
+第15章で`Rc<T>`は循環参照を生成してしまうリスクを伴いメモリリークを引き起こしてしまうと説明しました。
+同様に`Mutex<T>`でもデッドロックを生成するリスクを伴っています。
+
+これは処理が2つのリソースをロックする必要があり、2つのスレッドがそれぞれにロックを1つ獲得して永久にお互いを持ち合ってしまう時に起こります。
+デッドロックの詳細についてはデッドロックのあるRustプログラムを組んでみてください。
+それからどんな言語でも良いのでミューテックスに対してデッドロックを緩和する方法を調べてRustで実装してみてください。
+その際には`Mutex<T>, MutexGuard`に関する標準ライブラリのドキュメントが役に立ちます。
+
+次節では`Send, Sync`トレイトの独自の型で使用する方法についてみていきます。
