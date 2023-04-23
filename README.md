@@ -82,3 +82,4 @@ Rustプログラミング言語について学んだことを記録するリポ�
    - [状態共有並行性](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-03-shared-state.md)
    - [SyncとSendトレイト](https://github.com/ittokun/leaning-rust/tree/main/docs/ch16-04-sync-and-send.md)
 17. [オブジェクト指向プログラミング](https://github.com/ittokun/leaning-rust/tree/main/docs/ch17-00-oop.md)
+   - [オブジェクト指向言語](https://github.com/ittokun/leaning-rust/tree/main/docs/ch17-01-what-is-oop.md)
