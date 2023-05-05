@@ -54,3 +54,42 @@ assert_eq!("I ate a salad for lunch today", post.content());
 状態の変更には`Post`型内部で管理します。
 `Post`インスタンスのライブラリ使用者が状態の変化を直接管理する必要はありません。
 またユーザーは査読前に記事を公開するなど状態を誤ることもないでしょう。
+
+### Postを定義
+
+ライブラリの実装に取り掛かりましょう！
+何らかの内容を保持する公開の`Post`構造体が必要なので、構造体の定義と関連する公開用の`Post`インスタンスを生成する`new`関数から始めましょう。
+また非公開の`State`トレイトも作成します。それから、`Post`は`state`という非公開のフィールドに、`Option`で`Box<State>`のトレイトオブジェクトを保持します。
+
+```rust
+pub struct Post {
+    state: Option<Box<State>>,
+    content: String,
+}
+
+impl Post {
+    pub fn new() -> Post {
+        Post {
+            state: Some(Box::new(Draft {})),
+            content: String::new(),
+        }
+    }
+}
+
+trait State {}
+
+struct Draft {}
+
+impl State for Draft {}
+```
+
+`State`トレイトは異なる記事の状態で共有される振る舞いを定義し、`Draft, PendingReview, Published`状態は全て、`State`トレイトを実装します。
+今はトレイトにメソッドは何もなく、`Draft`が記事の初期状態にしたい状態なので、その状態だけを定義することから始めます。
+
+新しい`Post`を作る際、`state`フィールドは`Box`を保持する`Some`値にセットします。
+この`Box`が`Draft`構造体の新しいインスタンスを指します。
+これにより新しい`Post`を作るたびに、草稿から始まることが保証されます。
+`Post`の`state`フィールドは非公開なので、`Post`を他の状態で作成する方法はないのです。
+`Post::new`関数では、`content`フィールドを新しい空の`String`をセットします。
+
+## 記事の内容を格納
