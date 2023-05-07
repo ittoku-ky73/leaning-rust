@@ -68,6 +68,10 @@ impl Post {
             self.state = Some(s.approve())
         }
     }
+
+    pub fn reject(&mut self) {
+        self.state = Some(Box::new(Draft {}));
+    }
 }
 
 trait State {
@@ -115,5 +119,53 @@ impl State for Published {
 
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         &post.content
+    }
+}
+
+pub struct Post2 {
+    content: String,
+}
+
+impl Post2 {
+    pub fn new() -> DraftPost {
+        DraftPost {
+            content: String::new(),
+        }
+    }
+
+    pub fn content(&self) -> &str {
+        &self.content
+    }
+
+    pub fn reject(&mut self) {
+        self.content = String::new();
+    }
+}
+
+pub struct DraftPost {
+    content: String,
+}
+
+impl DraftPost {
+    pub fn add_text(&mut self, text: &str) {
+        self.content.push_str(text);
+    }
+
+    pub fn request_review(self) -> PendingReviewPost {
+        PendingReviewPost {
+            content: self.content,
+        }
+    }
+}
+
+pub struct PendingReviewPost {
+    content: String,
+}
+
+impl PendingReviewPost {
+    pub fn approve(self) -> Post2 {
+        Post2 {
+            content: self.content,
+        }
     }
 }
